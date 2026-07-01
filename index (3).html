@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Camp Note">
+<meta name="theme-color" content="#3D332A">
+<title>Camp Note</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --g:#6B6253;--gl:#F2EEE5;--gd:#3D332A;
+  --a:#C8743A;--al:#F7E6D4;--ad:#8A4A1F;
+  --r:#B0524A;--rl:#F6E4E1;--rd:#7E332C;
+  --bl:#5C7A8A;--bd:#2E4A57;--cl:#F0DFC5;--cd:#7A5424;
+  --bg:#FFFCF6;--bg2:#F7F2E9;--bg3:#EFE7D8;
+  --tx:#352B22;--tx2:#5E5040;--tx3:#8C7D69;
+  --br:rgba(53,38,18,0.13);--br2:rgba(53,38,18,0.24);
+  --r8:10px;--r12:18px;
+  --shadow:0 4px 18px rgba(40,30,15,0.10);
+  --glass:rgba(255,255,255,0.55);
+  --glass-br:rgba(255,255,255,0.55);
+  --blur:blur(18px) saturate(160%);
+  --sky:linear-gradient(180deg,#BFE0F2 0%,#D9EAD8 45%,#F2EFD9 100%);
+}
+body.tod-morning{--sky:radial-gradient(circle at 78% 14%,rgba(255,255,255,0.6) 0%,rgba(255,214,153,0) 38%),linear-gradient(180deg,#FFD9A0 0%,#FCE3C8 30%,#E7EEDD 65%,#D7E6D9 100%);
+  --glass:rgba(255,250,240,0.35);}
+body.tod-day{--sky:radial-gradient(circle at 50% 0%,rgba(255,255,255,0.45) 0%,rgba(255,255,255,0) 42%),linear-gradient(180deg,#BCE0F4 0%,#DCEEDD 48%,#F3EFD9 100%);}
+body.tod-evening{--sky:radial-gradient(circle at 72% 16%,rgba(255,214,160,0.6) 0%,rgba(255,214,160,0) 42%),linear-gradient(180deg,#3E4A78 0%,#8B5A82 26%,#D97F4E 54%,#F2B774 78%,#F8DCA4 100%);
+  --tx:#2A2218;--tx2:#5E5040;  --acc:#3D332A;
+}
+body.tod-night{--acc:#E9DFC6;--sky:linear-gradient(180deg,#0E1B33 0%,#16243F 45%,#202F4D 100%);
+  --tx:#F1ECE0;--tx2:#B7AE9D;--tx3:#7C7466;
+  --br:rgba(255,247,230,0.14);--br2:rgba(255,247,230,0.26);
+  --glass:rgba(255,255,255,0.09);--glass-br:rgba(255,255,255,0.18);
+  --shadow:0 4px 18px rgba(0,0,0,0.35);
+}
+.stars-layer{position:fixed;inset:0;max-width:480px;margin:0 auto;pointer-events:none;opacity:0;transition:opacity 1.2s ease;z-index:0;overflow:hidden;}
+body.tod-night .stars-layer{opacity:1;}
+.star-dot{position:absolute;border-radius:50%;background:#fff;animation:twinkle 3.5s ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:.25;}50%{opacity:1;}}
+.sun-banner{display:none;position:relative;z-index:1;padding:6px 10px 0;}
+body.tod-morning .sun-banner{display:block;}
+.sun-banner svg{width:100%;height:auto;display:block;}
+.sun-anim{animation:sunPulse 4.5s ease-in-out infinite;transform-origin:center;}
+@keyframes sunPulse{0%,100%{opacity:.92;}50%{opacity:1;}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:var(--sky);background-attachment:fixed;color:var(--tx);height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;transition:background 1s ease,color .4s ease;}
+.hdr{position:relative;z-index:1;background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-bottom:1px solid var(--glass-br);padding:12px 16px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0;padding-top:max(12px,env(safe-area-inset-top));}
+.hdr h1{font-size:19px;font-weight:700;color:var(--acc);letter-spacing:.01em;}
+.hdr p{font-size:11px;color:var(--tx2);}
+.content{position:relative;z-index:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px));}
+.panel{display:none !important;}
+.panel.active{display:block !important;}
+.bnav{position:relative;z-index:1;display:flex;background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-top:1px solid var(--glass-br);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px);}
+.nb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 1px 5px;border:none;background:transparent;cursor:pointer;color:var(--tx3);font-size:8px;font-weight:500;font-family:inherit;}
+.nb svg{width:19px;height:19px;stroke:currentColor;fill:none;flex-shrink:0;}
+.nb.on{color:var(--g);}
+.sec{font-size:11px;font-weight:700;color:var(--tx2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
+.card{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-radius:var(--r12);padding:14px;margin-bottom:10px;border:none;box-shadow:var(--shadow);}
+.row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.row input,.row select{flex:1;min-width:80px;font-size:15px;padding:10px 4px;border:none;border-bottom:1px solid var(--br);border-radius:0;background:transparent;color:var(--tx);font-family:inherit;}
+.row input::placeholder{color:var(--tx3);}
+.btn{padding:10px 14px;border:none;border-radius:var(--r8);background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);cursor:pointer;font-size:14px;font-weight:600;color:var(--tx);font-family:inherit;white-space:nowrap;}
+.btng{background:linear-gradient(135deg,var(--g) 0%,var(--gd) 100%);color:#fff;border:none;box-shadow:0 3px 10px rgba(62,87,54,0.4);}
+.btnf{width:100%;margin-bottom:10px;}
+.ilist{display:flex;flex-direction:column;gap:6px;}
+.item{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:none;border-radius:var(--r8);padding:11px 12px;display:flex;align-items:center;gap:10px;}
+.item.done{opacity:.42;}
+.item.done .iname{text-decoration:line-through;}
+.chk{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--br2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;}
+.chk.on{background:var(--g);border-color:transparent;}
+.chk.on::after{content:'';width:5px;height:10px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(40deg) translateY(-1px);display:block;}
+.iname{flex:1;font-size:15px;color:var(--tx);}
+.imeta{font-size:12px;color:var(--tx2);}
+.del{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:22px;padding:0 4px;line-height:1;font-family:inherit;}
+.badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700;white-space:nowrap;}
+.bg{background:var(--gl);color:var(--gd);}
+.ba{background:var(--al);color:var(--ad);}
+.br_{background:var(--rl);color:var(--rd);}
+.bb{background:#E3EBEE;color:var(--bd);}
+.bc{background:var(--cl);color:var(--cd);}
+.bgr{background:var(--bg3);color:var(--tx2);}
+.wbox{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-radius:var(--r12);padding:14px;margin-bottom:14px;border:none;box-shadow:var(--shadow);}
+.wbtns{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0;}
+.wbtn{padding:7px 13px;border:none;border-radius:20px;background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);font-family:inherit;}
+.wbtn.on{background:var(--gl);color:var(--gd);font-weight:700;}
+.wtags{display:flex;gap:6px;flex-wrap:wrap;}
+.grp{margin-bottom:16px;}
+.grph{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.grpl{font-size:13px;font-weight:700;color:var(--tx);}
+.grpp{font-size:12px;color:var(--tx2);}
+.pbar{height:4px;background:rgba(140,125,105,0.25);border-radius:2px;margin-bottom:8px;overflow:hidden;}
+.pfill{height:100%;background:var(--g);border-radius:2px;transition:width .3s;}
+.fcard{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:none;border-left:3px solid var(--r);border-radius:var(--r8);padding:12px;margin-bottom:8px;}
+.fhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.ftitle{font-size:14px;font-weight:700;color:var(--tx);}
+.fwhat{font-size:12px;color:var(--tx2);margin-bottom:6px;}
+.ffix{font-size:12px;color:var(--acc);border-top:1px solid var(--br);padding-top:7px;}
+.lcard{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:none;border-radius:var(--r12);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+.lhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.lname{font-size:16px;font-weight:700;color:var(--tx);}
+.ldate{font-size:12px;color:var(--tx2);}
+.lnote{font-size:13px;color:var(--tx2);margin:6px 0;}
+.stars{display:flex;gap:3px;margin:6px 0;}
+.star{font-size:20px;cursor:pointer;color:var(--tx3);}
+.star.on{color:var(--a);}
+.photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.pthumb{width:70px;height:70px;border-radius:8px;object-fit:cover;border:1px solid var(--br);}
+.padd{width:70px;height:70px;border-radius:8px;border:1.5px dashed var(--br2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx3);font-size:26px;background:var(--glass);}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.sbox{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:none;border-radius:var(--r8);padding:12px;box-shadow:var(--shadow);}
+.slbl{font-size:11px;color:var(--tx2);margin-bottom:4px;}
+.sval{font-size:26px;font-weight:700;color:var(--acc);}
+.rrow{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--tx2);padding:8px 0;border-bottom:1px solid var(--br);}
+.rrow:last-child{border-bottom:none;}
+.rval{color:var(--tx);font-weight:500;text-align:right;max-width:55%;}
+.wcard{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:none;border-radius:var(--r8);padding:11px 12px;margin-bottom:7px;display:flex;align-items:center;gap:10px;}
+.empty{text-align:center;padding:40px 20px;color:var(--tx3);font-size:14px;}
+input[type="file"]{display:none;}
+.dline{font-size:13px;padding:10px 4px;border:none;border-bottom:1px solid var(--br);border-radius:0;background:transparent;color:var(--tx);width:100%;margin-bottom:8px;font-family:inherit;}
+.dline::placeholder{color:var(--tx3);}
+.kc-card{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:none;border-radius:var(--r12);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow);}
+.kc-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.kc-name{font-size:15px;font-weight:700;color:var(--tx);}
+.kc-meta{font-size:11px;color:var(--tx2);margin-top:2px;}
+.kc-body{padding:12px 14px;border-top:1px solid var(--br);}
+.komi-card{background:rgba(140,125,105,0.1);border-radius:var(--r8);padding:10px 12px;margin-bottom:8px;border-left:3px solid var(--a);}
+.komi-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.komi-nick{font-size:12px;font-weight:700;color:var(--tx);}
+.komi-date{font-size:11px;color:var(--tx2);}
+.komi-text{font-size:13px;color:var(--tx);line-height:1.6;margin-bottom:6px;}
+.komi-photos{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+.komi-thumb{width:60px;height:60px;border-radius:6px;object-fit:cover;border:1px solid var(--br);}
+.ai-box{background:rgba(120,105,85,0.16);border-radius:var(--r8);padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--tx);line-height:1.6;}
+.filter-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.filter-btn{padding:5px 12px;border:none;border-radius:20px;background:transparent;cursor:pointer;font-size:12px;color:var(--tx2);font-family:inherit;}
+.filter-btn.on{background:var(--gl);color:var(--gd);font-weight:700;}
+.post-form{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:none;border-radius:var(--r12);padding:14px;margin-bottom:14px;box-shadow:var(--shadow);}
+.post-form textarea{width:100%;font-size:14px;padding:10px 4px;border:none;border-bottom:1px solid var(--br);border-radius:0;background:transparent;color:var(--tx);font-family:inherit;resize:vertical;min-height:70px;margin-bottom:8px;}
+.post-form textarea::placeholder{color:var(--tx3);}
+</style>
+</head>
+<body class="tod-day">
+<div class="stars-layer" id="starsLayer"></div>
+
+<div class="hdr">
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path d="M16 3L29 26H3L16 3Z" fill="#3D332A" opacity="0.15" stroke="#3D332A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M16 3L22 14H10L16 3Z" fill="#3D332A" stroke="#3D332A" stroke-width="1.5" stroke-linejoin="round"/>
+    <rect x="13" y="23" width="6" height="5" rx="1" fill="#C8743A"/>
+  </svg>
+  <div><h1>Camp Note</h1><p id="ss">データは自動保存されます</p></div>
+</div>
+
+<div class="sun-banner">
+  <svg viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#FFFBEA"/>
+        <stop offset="45%" stop-color="#FFD877"/>
+        <stop offset="100%" stop-color="#FFAE42"/>
+      </radialGradient>
+    </defs>
+    <g class="sun-anim" transform="translate(335,50)">
+      <g stroke="#FFC368" stroke-width="4" stroke-linecap="round">
+        <line x1="0" y1="-46" x2="0" y2="-32"/>
+        <line x1="0" y1="46" x2="0" y2="32"/>
+        <line x1="-46" y1="0" x2="-32" y2="0"/>
+        <line x1="46" y1="0" x2="32" y2="0"/>
+        <line x1="-32" y1="-32" x2="-23" y2="-23"/>
+        <line x1="32" y1="-32" x2="23" y2="-23"/>
+        <line x1="-32" y1="32" x2="-23" y2="23"/>
+        <line x1="32" y1="32" x2="23" y2="23"/>
+      </g>
+      <circle r="27" fill="url(#sunGrad)" stroke="#FFEFC2" stroke-width="1.5"/>
+    </g>
+  </svg>
+</div>
+
+<div class="content">
+  <div id="tab-pack" class="panel active">
+    <div class="wbox">
+      <div class="sec" style="margin-bottom:6px;">天気で持ち物を自動提案</div>
+      <div class="wbtns">
+        <button class="wbtn on" onclick="setW('sunny',this)">☀️ 晴れ</button>
+        <button class="wbtn" onclick="setW('cloudy',this)">☁️ くもり</button>
+        <button class="wbtn" onclick="setW('rainy',this)">🌧️ 雨</button>
+        <button class="wbtn" onclick="setW('cold',this)">🥶 寒い</button>
+        <button class="wbtn" onclick="setW('hot',this)">🥵 暑い</button>
+      </div>
+      <div class="wtags" id="wtags"></div>
+    </div>
+    <div id="pack-groups"></div>
+    <div class="row" style="margin-top:12px;">
+      <input type="text" id="pack-in" placeholder="アイテムを追加...">
+      <select id="pack-cat"><option>必需品</option><option>調理</option><option>衣類</option><option>その他</option></select>
+      <button class="btn btng" onclick="addPack()">追加</button>
+    </div>
+  </div>
+
+  <div id="tab-shop" class="panel">
+    <div class="row">
+      <input type="text" id="shop-in" placeholder="商品名...">
+      <select id="shop-cat"><option>食料</option><option>道具</option><option>衣類</option><option>その他</option></select>
+    </div>
+    <button class="btn btng btnf" onclick="addShop()">リストに追加</button>
+    <div class="ilist" id="shop-list"></div>
+  </div>
+
+  <div id="tab-stock" class="panel">
+    <div class="sgrid" id="inv-stats"></div>
+    <div class="row">
+      <input type="text" id="st-name" placeholder="アイテム名...">
+      <input type="number" id="st-qty" placeholder="数量" style="width:60px;flex:none;" min="0">
+      <select id="st-st"><option value="ok">十分</option><option value="low">少ない</option><option value="out">なし</option></select>
+    </div>
+    <input class="dline" type="date" id="st-exp">
+    <button class="btn btng btnf" onclick="addStock()">在庫に追加</button>
+    <div class="ilist" id="stock-list"></div>
+  </div>
+
+  <div id="tab-fail" class="panel">
+    <div class="card" style="margin-bottom:14px;">
+      <div class="sec" style="margin-bottom:10px;">失敗を記録する</div>
+      <div class="row">
+        <input type="text" id="fail-ti" placeholder="何を失敗した？">
+        <select id="fail-cat"><option>忘れ物</option><option>設営</option><option>食料</option><option>天気</option><option>その他</option></select>
+      </div>
+      <div class="row"><input type="text" id="fail-wh" placeholder="状況を詳しく..."></div>
+      <div class="row">
+        <input type="text" id="fail-fx" placeholder="次回の対策...">
+        <button class="btn btng" onclick="addFail()">記録</button>
+      </div>
+    </div>
+    <div id="fail-list"></div>
+  </div>
+
+  <div id="tab-log" class="panel">
+    <div class="card" style="margin-bottom:14px;">
+      <div class="sec" style="margin-bottom:10px;">新しい記録を追加</div>
+      <div class="row">
+        <input type="text" id="log-nm" placeholder="キャンプ場名...">
+        <input type="date" id="log-dt" style="flex:none;width:140px;">
+      </div>
+      <div class="row"><input type="text" id="log-nt" placeholder="メモ（天気、感想など）..."></div>
+      <button class="btn btng btnf" style="margin-bottom:0;" onclick="addLog()">記録を追加</button>
+    </div>
+    <div id="log-list"></div>
+  </div>
+
+  <div id="tab-review" class="panel">
+    <div id="review-body"></div>
+  </div>
+
+  <div id="tab-kuchi" class="panel">
+    <div class="post-form">
+      <div class="sec" style="margin-bottom:10px;">口コミを投稿する</div>
+      <div class="row">
+        <input type="text" id="k-camp" placeholder="キャンプ場名...">
+        <input type="text" id="k-nick" placeholder="ニックネーム" style="max-width:110px;flex:none;">
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:10px;" id="k-stars">
+        <span class="star" onclick="setKStar(1)">★</span>
+        <span class="star" onclick="setKStar(2)">★</span>
+        <span class="star" onclick="setKStar(3)">★</span>
+        <span class="star" onclick="setKStar(4)">★</span>
+        <span class="star" onclick="setKStar(5)">★</span>
+      </div>
+      <textarea id="k-text" placeholder="感想・アドバイスを書いてください..."></textarea>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+        <button class="btn" onclick="document.getElementById('k-photo-in').click()">写真追加</button>
+        <div id="k-prev" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+      </div>
+      <button class="btn btng" style="width:100%;" onclick="postKuchi()">投稿する</button>
+    </div>
+    <div class="filter-row" id="k-filters"></div>
+    <div id="kuchi-list"></div>
+  </div>
+
+  <div id="tab-wish" class="panel">
+    <div class="row">
+      <input type="text" id="wish-in" placeholder="キャンプ場名...">
+      <button class="btn btng" onclick="addWish()">追加</button>
+    </div>
+    <div id="wish-list"></div>
+  </div>
+</div>
+
+<nav class="bnav">
+  <button class="nb on" onclick="showTab('pack',this)">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M5 8h14l-1.5 12H6.5L5 8z"/><path d="M9 8V6a3 3 0 016 0v2"/><path d="M9 12h6"/></svg>持ち物
+  </button>
+  <button class="nb" onclick="showTab('shop',this)">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M3 3h2l2 9h10l2-6H7"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>買い物
+  </button>
+  <button class="nb" onclick="showTab('stock',this)">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="11" width="7" height="10" rx="1"/><rect x="14" y="7" width="7" height="14" rx="1"/></svg>在庫
+  </button>
+  <button class="nb" onclick="showTab('fail',this)">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v1"/></svg>失敗
+  </button>
+  <button class="nb" onclick="showTab('log',this)">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 12h10M7 8h6M7 16h8"/></svg>記録
+  </button>
+  <button class="nb" onclick="showTab('review',this)">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M3 17L8 10l4 7 4-5 5 8"/></svg>統計
+  </button>
+  <button class="nb" onclick="showTab('kuchi',this)">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>口コミ
+  </button>
+  <button class="nb" onclick="showTab('wish',this)">
+    <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 3l2.4 5 5.6.8-4 4 .9 5.5L12 16l-5 2.7.9-5.5-4-4 5.6-.8z"/></svg>行きたい
+  </button>
+</nav>
+
+<input type="file" id="photo-in" accept="image/*" multiple>
+<input type="file" id="k-photo-in" accept="image/*" multiple>
+
+<script>
+// 時間帯で背景の空グラデーションを切り替える(朝/昼/夕/夜)
+function setTimeOfDay(){
+  var h=new Date().getHours();
+  var c='tod-day';
+  if(h>=5&&h<10)c='tod-morning';
+  else if(h>=10&&h<16)c='tod-day';
+  else if(h>=16&&h<19)c='tod-evening';
+  else c='tod-night';
+  document.body.classList.remove('tod-morning','tod-day','tod-evening','tod-night');
+  document.body.classList.add(c);
+}
+setTimeOfDay();
+setInterval(setTimeOfDay,5*60*1000);
+
+// 夜空の星をランダムに生成(瞬きアニメーション付き)
+(function makeStars(){
+  var layer=document.getElementById('starsLayer');
+  if(!layer)return;
+  var n=45;
+  for(var i=0;i<n;i++){
+    var s=document.createElement('div');
+    s.className='star-dot';
+    var size=(Math.random()*1.6+0.8).toFixed(1);
+    s.style.width=size+'px';
+    s.style.height=size+'px';
+    s.style.left=(Math.random()*100)+'%';
+    s.style.top=(Math.random()*55)+'%';
+    s.style.animationDelay=(Math.random()*3.5).toFixed(1)+'s';
+    s.style.animationDuration=(2.5+Math.random()*3).toFixed(1)+'s';
+    layer.appendChild(s);
+  }
+})();
+
+var AI_WORKER_URL='https://campnote.bamuliliko.workers.dev';
+
+var WD={
+  sunny:{tags:[{t:'日焼け止め必須',c:'ba'},{t:'帽子・サングラス',c:'ba'},{t:'水分多めに',c:'bb'}],bonus:['日焼け止め','サングラス','帽子']},
+  cloudy:{tags:[{t:'急な雨に備えて',c:'bgr'},{t:'レイヤリング推奨',c:'bgr'}],bonus:['レインウェア','防風ジャケット']},
+  rainy:{tags:[{t:'レインウェア必須',c:'bb'},{t:'タープ推奨',c:'bg'},{t:'テント防水確認',c:'bb'}],bonus:['レインウェア','タープ','長靴','防水バッグ']},
+  cold:{tags:[{t:'防寒着を重ねる',c:'bb'},{t:'湯たんぽ',c:'bg'},{t:'シュラフ確認',c:'bb'}],bonus:['ダウンジャケット','湯たんぽ','手袋','ニット帽']},
+  hot:{tags:[{t:'熱中症注意',c:'br_'},{t:'虫除け必須',c:'bg'},{t:'冷感グッズ',c:'bg'}],bonus:['虫除けスプレー','冷却タオル','ポータブル扇風機']}
+};
+var DP={
+  '必需品':['テント','シュラフ','マット','ランタン','焚き火台','ファーストエイドキット','ライター'],
+  '調理':['バーナー','ガスカートリッジ','クッカー','食器','箸・スプーン','まな板'],
+  '衣類':['着替え×2','レインウェア','防寒着','帽子'],
+  'その他':['ゴミ袋','トイレットペーパー','ウェットティッシュ']
+};
+
+function loadS(){
+  try{var s=localStorage.getItem('cn4');if(s)return JSON.parse(s);}catch(e){}
+  var pack=[];var id=100;
+  Object.keys(DP).forEach(function(cat){DP[cat].forEach(function(nm){pack.push({id:id++,name:nm,cat:cat,done:false});});});
+  return{weather:'sunny',pack:pack,shop:[],stock:[],fail:[],log:[],wish:[],nid:200,pt:null};
+}
+var S=loadS();
+
+function save(){
+  try{localStorage.setItem('cn4',JSON.stringify(S));document.getElementById('ss').textContent='保存済み ✓';setTimeout(function(){document.getElementById('ss').textContent='データは自動保存されます';},1500);}catch(e){}
+}
+function uid(){return ++S.nid;}
+
+function showTab(name,el){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('tab-'+name).classList.add('active');
+  if(el)el.classList.add('on');
+  if(name==='kuchi'){renderKuchi();}else{render();}
+}
+
+function setW(w,el){
+  S.weather=w;
+  document.querySelectorAll('.wbtn').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  WD[w].bonus.forEach(function(nm){
+    if(!S.pack.find(function(p){return p.name===nm;})){
+      S.pack.push({id:uid(),name:nm,cat:'必需品',done:false,auto:true});
+    }
+  });
+  save();render();
+}
+
+function toggle(type,id){
+  var item=S[type].find(function(x){return x.id===id;});
+  if(item){item.done=!item.done;save();render();}
+}
+function delI(type,id){S[type]=S[type].filter(function(x){return x.id!==id;});save();render();}
+function setR(type,id,v){var item=S[type].find(function(x){return x.id===id;});if(item){item.rating=v;save();render();}}
+
+function addPack(){
+  var v=document.getElementById('pack-in').value.trim();
+  var cat=document.getElementById('pack-cat').value;
+  if(!v)return;
+  S.pack.push({id:uid(),name:v,cat:cat,done:false});
+  document.getElementById('pack-in').value='';
+  save();render();
+}
+function addShop(){
+  var v=document.getElementById('shop-in').value.trim();
+  if(!v)return;
+  S.shop.push({id:uid(),name:v,cat:document.getElementById('shop-cat').value,done:false});
+  document.getElementById('shop-in').value='';
+  save();render();
+}
+function addStock(){
+  var nm=document.getElementById('st-name').value.trim();
+  if(!nm)return;
+  S.stock.push({id:uid(),name:nm,qty:parseInt(document.getElementById('st-qty').value)||0,status:document.getElementById('st-st').value,exp:document.getElementById('st-exp').value||null});
+  document.getElementById('st-name').value='';document.getElementById('st-qty').value='';document.getElementById('st-exp').value='';
+  save();render();
+}
+function addFail(){
+  var ti=document.getElementById('fail-ti').value.trim();
+  if(!ti)return;
+  S.fail.unshift({id:uid(),cat:document.getElementById('fail-cat').value,title:ti,what:document.getElementById('fail-wh').value.trim(),fix:document.getElementById('fail-fx').value.trim()});
+  document.getElementById('fail-ti').value='';document.getElementById('fail-wh').value='';document.getElementById('fail-fx').value='';
+  save();render();
+}
+function addLog(){
+  var nm=document.getElementById('log-nm').value.trim();
+  if(!nm)return;
+  S.log.unshift({id:uid(),name:nm,date:document.getElementById('log-dt').value,note:document.getElementById('log-nt').value.trim(),rating:0,photos:[]});
+  document.getElementById('log-nm').value='';document.getElementById('log-dt').value='';document.getElementById('log-nt').value='';
+  save();render();
+}
+function addWish(){
+  var v=document.getElementById('wish-in').value.trim();
+  if(!v)return;
+  S.wish.push({id:uid(),name:v,done:false,rating:0});
+  document.getElementById('wish-in').value='';
+  save();render();
+}
+
+function openPhoto(id){S.pt=id;document.getElementById('photo-in').click();}
+document.getElementById('photo-in').addEventListener('change',function(e){
+  var log=S.log.find(function(l){return l.id===S.pt;});
+  if(!log)return;
+  Array.from(e.target.files).forEach(function(file){
+    var r=new FileReader();r.onload=function(ev){log.photos.push(ev.target.result);save();render();};r.readAsDataURL(file);
+  });this.value='';
+});
+
+function expB(exp){
+  if(!exp)return'';
+  var d=Math.ceil((new Date(exp)-new Date())/86400000);
+  if(d<0)return'<span class="badge br_">期限切れ</span>';
+  if(d<=30)return'<span class="badge ba">残'+d+'日</span>';
+  return'<span class="badge bg">'+exp+'</span>';
+}
+function starH(rating,id,type){
+  var h='<div class="stars">';
+  for(var i=1;i<=5;i++)h+='<span class="star'+(i<=(rating||0)?' on':'')+'" onclick="setR(\''+type+'\','+id+','+i+')">★</span>';
+  return h+'</div>';
+}
+
+function render(){
+  var wt=document.getElementById('wtags');
+  if(wt)wt.innerHTML=WD[S.weather].tags.map(function(t){return'<span class="badge '+t.c+'">'+t.t+'</span>';}).join('');
+
+  var pg=document.getElementById('pack-groups');
+  if(pg){
+    var cats=[...new Set(S.pack.map(function(p){return p.cat;}))];
+    pg.innerHTML=cats.map(function(cat){
+      var items=S.pack.filter(function(p){return p.cat===cat;});
+      var done=items.filter(function(p){return p.done;}).length;
+      var pct=items.length?Math.round(done/items.length*100):0;
+      return'<div class="grp"><div class="grph"><span class="grpl">'+cat+'</span><span class="grpp">'+done+'/'+items.length+'</span></div>'+
+        '<div class="pbar"><div class="pfill" style="width:'+pct+'%"></div></div>'+
+        '<div class="ilist">'+items.map(function(p){
+          return'<div class="item'+(p.done?' done':'')+'"><div class="chk'+(p.done?' on':'')+'" onclick="toggle(\'pack\','+p.id+')"></div><span class="iname">'+p.name+'</span>'+(p.auto?'<span class="badge bg">天気</span>':'')+
+          '<button class="del" onclick="delI(\'pack\','+p.id+')">×</button></div>';
+        }).join('')+'</div></div>';
+    }).join('');
+  }
+
+  var sl=document.getElementById('shop-list');
+  if(sl){
+    if(!S.shop.length){sl.innerHTML='<div class="empty">買い物リストは空です</div>';}
+    else sl.innerHTML=[].concat(S.shop.filter(function(s){return!s.done;}),S.shop.filter(function(s){return s.done;})).map(function(s){
+      return'<div class="item'+(s.done?' done':'')+'"><div class="chk'+(s.done?' on':'')+'" onclick="toggle(\'shop\','+s.id+')"></div><span class="iname">'+s.name+'</span><span class="imeta">'+s.cat+'</span><button class="del" onclick="delI(\'shop\','+s.id+')">×</button></div>';
+    }).join('');
+  }
+
+  var is=document.getElementById('inv-stats');
+  if(is){
+    var ok=S.stock.filter(function(s){return s.status==='ok';}).length;
+    var lw=S.stock.filter(function(s){return s.status==='low';}).length;
+    var ot=S.stock.filter(function(s){return s.status==='out';}).length;
+    var ex=S.stock.filter(function(s){if(!s.exp)return false;var d=Math.ceil((new Date(s.exp)-new Date())/86400000);return d>=0&&d<=30;}).length;
+    is.innerHTML='<div class="sbox"><div class="slbl">十分</div><div class="sval" style="color:var(--acc)">'+ok+'</div></div>'+
+      '<div class="sbox"><div class="slbl">少ない</div><div class="sval" style="color:var(--acc)">'+lw+'</div></div>'+
+      '<div class="sbox"><div class="slbl">在庫なし</div><div class="sval" style="color:var(--acc)">'+ot+'</div></div>'+
+      '<div class="sbox"><div class="slbl">期限注意</div><div class="sval" style="color:var(--acc)">'+ex+'</div></div>';
+  }
+  var stl=document.getElementById('stock-list');
+  if(stl){
+    if(!S.stock.length){stl.innerHTML='<div class="empty">在庫を追加しよう</div>';}
+    else stl.innerHTML=S.stock.map(function(s){
+      return'<div class="item"><div style="flex:1"><div class="iname">'+s.name+'</div><div style="display:flex;gap:6px;margin-top:4px;align-items:center;"><span class="imeta">×'+s.qty+'</span>'+expB(s.exp)+'</div></div>'+
+      '<span class="badge '+(s.status==='ok'?'bg':s.status==='low'?'ba':'br_')+'">'+(s.status==='ok'?'十分':s.status==='low'?'少ない':'なし')+'</span>'+
+      '<button class="del" onclick="delI(\'stock\','+s.id+')">×</button></div>';
+    }).join('');
+  }
+
+  var fl=document.getElementById('fail-list');
+  if(fl){
+    if(!S.fail.length){fl.innerHTML='<div class="empty">失敗がなければ最高！</div>';}
+    else fl.innerHTML=S.fail.map(function(f){
+      return'<div class="fcard"><div class="fhead"><span class="ftitle">'+f.title+'</span><div style="display:flex;gap:6px;align-items:center;"><span class="badge bc">'+f.cat+'</span><button class="del" onclick="delI(\'fail\','+f.id+')">×</button></div></div>'+
+      (f.what?'<div class="fwhat">'+f.what+'</div>':'')+(f.fix?'<div class="ffix">対策: '+f.fix+'</div>':'')+'</div>';
+    }).join('');
+  }
+
+  var ll=document.getElementById('log-list');
+  if(ll){
+    if(!S.log.length){ll.innerHTML='<div class="empty">記録を残そう</div>';}
+    else ll.innerHTML=S.log.map(function(l){
+      return'<div class="lcard"><div class="lhead"><span class="lname">'+l.name+'</span><span class="ldate">'+(l.date||'')+'</span></div>'+
+      starH(l.rating,l.id,'log')+(l.note?'<div class="lnote">'+l.note+'</div>':'')+
+      '<div class="photos">'+(l.photos||[]).map(function(p){return'<img class="pthumb" src="'+p+'">';}).join('')+
+      '<div class="padd" onclick="openPhoto('+l.id+')">+</div></div>'+
+      '<div style="display:flex;justify-content:flex-end;margin-top:10px;"><button class="del" onclick="delI(\'log\','+l.id+')">削除</button></div></div>';
+    }).join('');
+  }
+
+  var rb=document.getElementById('review-body');
+  if(rb){
+    var tot=S.log.length;
+    var avgR=tot?(S.log.reduce(function(a,l){return a+(l.rating||0);},0)/tot).toFixed(1):'—';
+    var best=S.log.slice().sort(function(a,b){return(b.rating||0)-(a.rating||0);})[0];
+    var fc={};S.fail.forEach(function(f){fc[f.cat]=(fc[f.cat]||0)+1;});
+    var tf=Object.entries(fc).sort(function(a,b){return b[1]-a[1];})[0];
+    var pd=S.pack.filter(function(p){return p.done;}).length;
+    rb.innerHTML='<div class="card"><div class="sec" style="margin-bottom:10px;">サマリー</div>'+
+      '<div class="rrow"><span>行ったキャンプ場</span><span class="rval">'+tot+'回</span></div>'+
+      '<div class="rrow"><span>平均評価</span><span class="rval">'+avgR+' / 5</span></div>'+
+      (best?'<div class="rrow"><span>お気に入り</span><span class="rval">'+best.name+'</span></div>':'')+
+      '<div class="rrow"><span>持ち物チェック済み</span><span class="rval">'+pd+' / '+S.pack.length+'</span></div>'+
+      '<div class="rrow"><span>失敗ログ</span><span class="rval">'+S.fail.length+'件</span></div>'+
+      (tf?'<div class="rrow"><span>最多失敗カテゴリ</span><span class="rval">'+tf[0]+'（'+tf[1]+'回）</span></div>':'')+
+      '</div>'+
+      (S.log.length?'<div class="card"><div class="sec" style="margin-bottom:10px;">キャンプ履歴</div>'+S.log.map(function(l){return'<div class="rrow"><span>'+(l.date?l.date+' ':'')+l.name+'</span><span>'+'★'.repeat(l.rating||0)+'</span></div>';}).join('')+'</div>':'');
+  }
+
+  var wl=document.getElementById('wish-list');
+  if(wl){
+    if(!S.wish.length){wl.innerHTML='<div class="empty">行きたい場所を追加しよう</div>';}
+    else wl.innerHTML=S.wish.map(function(w){
+      return'<div class="wcard'+(w.done?' done':'')+'"><div class="chk'+(w.done?' on':'')+'" onclick="toggle(\'wish\','+w.id+')"></div>'+
+      '<div style="flex:1"><div class="iname">'+w.name+'</div>'+starH(w.rating,w.id,'wish')+'</div>'+
+      '<span class="badge '+(w.done?'bg':'bb')+'">'+(w.done?'行った':'行きたい')+'</span>'+
+      '<button class="del" onclick="delI(\'wish\','+w.id+')">×</button></div>';
+    }).join('');
+  }
+}
+
+/* ===== 口コミ ===== */
+var DEMO=[
+  {id:1,camp:'道志の森キャンプ場',nick:'たろう',rating:5,text:'川沿いで最高！子供も大喜び。週末は混むので平日がおすすめ。',date:'2025-03-10',photos:[],summary:null},
+  {id:2,camp:'田貫湖キャンプ場',nick:'outdoor_hana',rating:4,text:'富士山がどーんと見えて感動。風が強い日は要注意。ペグをしっかり打つべし。',date:'2025-02-20',photos:[],summary:null},
+  {id:3,camp:'道志の森キャンプ場',nick:'初心者キャンパー',rating:4,text:'初キャンプ。サイトが広くて設営しやすかった！管理人さんも親切。',date:'2025-01-15',photos:[],summary:null},
+  {id:4,camp:'奥日光キャンプ場',nick:'yama_koji',rating:5,text:'紅葉の季節は絶景。星空も最高。標高が高いので夜は防寒必須。',date:'2024-11-05',photos:[],summary:null},
+];
+function loadK(){try{var s=localStorage.getItem('cn4_k');if(s)return JSON.parse(s);}catch(e){}return DEMO;}
+var KS=loadK();
+var knid=500;
+var kStar=0;
+var kPhotos=[];
+var kFilter='all';
+function saveK(){try{localStorage.setItem('cn4_k',JSON.stringify(KS));}catch(e){}}
+
+function setKStar(v){
+  kStar=v;
+  var stars=document.getElementById('k-stars').querySelectorAll('.star');
+  stars.forEach(function(s,i){s.classList.toggle('on',i<v);});
+}
+
+document.getElementById('k-photo-in').addEventListener('change',function(e){
+  Array.from(e.target.files).forEach(function(file){
+    var r=new FileReader();
+    r.onload=function(ev){
+      kPhotos.push(ev.target.result);
+      document.getElementById('k-prev').innerHTML=kPhotos.map(function(p){
+        return'<img src="'+p+'" style="width:50px;height:50px;border-radius:6px;object-fit:cover;">';
+      }).join('');
+    };
+    r.readAsDataURL(file);
+  });
+  this.value='';
+});
+
+function matchCamp(input){
+  var existing=Object.keys(KS.reduce(function(g,k){g[k.camp]=1;return g;},{}));
+  if(!existing.length)return input;
+  var low=input.toLowerCase();
+  var matched=null;
+  existing.forEach(function(name){
+    var keywords=name.toLowerCase().replace(/キャンプ場|オートキャンプ|サイト/g,'').split(/\s+/);
+    keywords.forEach(function(kw){
+      if(kw.length>=2&&(low.indexOf(kw)!==-1||name.toLowerCase().indexOf(low)!==-1)){
+        if(!matched)matched=name;
+      }
+    });
+    if(name.toLowerCase().indexOf(low)!==-1||low.indexOf(name.toLowerCase())!==-1){
+      matched=name;
+    }
+  });
+  return matched||input;
+}
+
+function postKuchi(){
+  var campInput=document.getElementById('k-camp').value.trim();
+  var nick=document.getElementById('k-nick').value.trim()||'匿名';
+  var text=document.getElementById('k-text').value.trim();
+  if(!campInput||!text){alert('キャンプ場名と感想を入力してください');return;}
+
+  var btn=document.querySelector('.btn.btng[onclick="postKuchi()"]');
+  if(btn){btn.textContent='マッチング中...';btn.disabled=true;}
+
+  var existing=Object.keys(KS.reduce(function(g,k){g[k.camp]=1;return g;},{}));
+  var campFinal=campInput;
+
+  if(existing.length>0){
+    var prompt='ユーザーが入力したキャンプ場名: 「'+campInput+'」\n既存のキャンプ場リスト:\n'+existing.map(function(e,i){return(i+1)+'. '+e;}).join('\n')+
+      '\n\nユーザー入力が既存リストのどれかと同じ場所を指している場合、その正式名称を返してください。違う場所なら「'+campInput+'」をそのまま返してください。名称のみ返し、説明は不要です。';
+
+    fetch(AI_WORKER_URL,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt:prompt,max_tokens:100})
+    }).then(function(res){return res.json();}).then(function(d){
+      var result=((d&&d.text)||campInput).trim().replace(/^「|」$/g,'');
+      campFinal=result||campInput;
+    }).catch(function(){
+      campFinal=matchCamp(campInput);
+    }).finally(function(){
+      doPost(campFinal,nick,text);
+      if(btn){btn.textContent='投稿する';btn.disabled=false;}
+    });
+  } else {
+    doPost(campFinal,nick,text);
+    if(btn){btn.textContent='投稿する';btn.disabled=false;}
+  }
+}
+
+function doPost(camp,nick,text){
+  KS.unshift({id:++knid,camp:camp,nick:nick,rating:kStar||3,text:text,date:new Date().toISOString().slice(0,10),photos:kPhotos.slice(),summary:null});
+  saveK();
+  document.getElementById('k-camp').value='';
+  document.getElementById('k-nick').value='';
+  document.getElementById('k-text').value='';
+  document.getElementById('k-prev').innerHTML='';
+  kStar=0;kPhotos=[];setKStar(0);
+  renderKuchi();
+}
+
+function setKFilter(f,el){
+  kFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  renderKuchi();
+}
+
+function toggleKC(id){
+  var el=document.getElementById(id);
+  if(el)el.style.display=(el.style.display==='none'?'':'none');
+}
+
+function getAISummary(camp){
+  var sid='ais-'+camp.replace(/[^a-zA-Z0-9]/g,'_');
+  var box=document.getElementById(sid);
+  if(!box)return;
+  box.innerHTML='<div style="font-size:12px;color:var(--tx2);text-align:center;padding:6px;">AIが要約中...</div>';
+  var reviews=KS.filter(function(k){return k.camp===camp;});
+  var prompt='以下は「'+camp+'」の口コミです。特徴・おすすめポイント・注意点を3行で日本語で簡潔にまとめてください。\n\n'+reviews.map(function(r){return'・'+r.text;}).join('\n');
+  fetch(AI_WORKER_URL,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt:prompt,max_tokens:1000})
+  }).then(function(res){return res.json();}).then(function(d){
+    var txt=(d&&d.text)||'要約できませんでした';
+    box.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--acc);margin-bottom:4px;">AI要約</div>'+txt.replace(/\n/g,'<br>');
+    KS.filter(function(k){return k.camp===camp;}).forEach(function(k){k.summary=txt;});
+    saveK();
+  }).catch(function(){box.innerHTML='要約の取得に失敗しました';});
+}
+
+function renderKuchi(){
+  var groups={};
+  KS.forEach(function(k){if(!groups[k.camp])groups[k.camp]=[];groups[k.camp].push(k);});
+  var camps=Object.keys(groups);
+
+  var fr=document.getElementById('k-filters');
+  if(fr){
+    var html='<button class="filter-btn'+(kFilter==='all'?' on':'')+'" onclick="setKFilter(\'all\',this)">すべて</button>';
+    camps.forEach(function(c){
+      html+='<button class="filter-btn'+(kFilter===c?' on':'')+'" onclick="setKFilter(\''+c.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\',this)">'+c+'</button>';
+    });
+    fr.innerHTML=html;
+  }
+
+  var list=document.getElementById('kuchi-list');
+  if(!list)return;
+  var show=kFilter==='all'?camps:camps.filter(function(c){return c===kFilter;});
+  if(!show.length){list.innerHTML='<div class="empty">口コミはまだありません</div>';return;}
+
+  list.innerHTML=show.map(function(camp){
+    var rv=groups[camp];
+    var avg=(rv.reduce(function(a,r){return a+(r.rating||0);},0)/rv.length).toFixed(1);
+    var sid='ais-'+camp.replace(/[^a-zA-Z0-9]/g,'_');
+    var bid='kcb-'+camp.replace(/[^a-zA-Z0-9]/g,'_');
+    var hasSummary=rv.some(function(r){return r.summary;});
+    var sumTxt=hasSummary?rv.find(function(r){return r.summary;}).summary:'';
+    return'<div class="kc-card">'+
+      '<div class="kc-head" onclick="toggleKC(\''+bid+'\')">'+
+        '<div><div class="kc-name">'+camp+'</div><div class="kc-meta">★'+avg+' | '+rv.length+'件</div></div>'+
+        '<span style="font-size:11px;color:var(--tx3);">▼</span>'+
+      '</div>'+
+      '<div id="'+bid+'" class="kc-body">'+
+        '<div id="'+sid+'" class="ai-box">'+(hasSummary?'<div style="font-size:11px;font-weight:600;color:var(--acc);margin-bottom:4px;">AI要約</div>'+sumTxt.replace(/\n/g,'<br>'):'')+'</div>'+
+        (!hasSummary?'<button class="btn" style="margin-bottom:10px;font-size:12px;" onclick="getAISummary(\''+camp.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">AIで要約する</button>':'')+
+        rv.map(function(r){
+          return'<div class="komi-card">'+
+            '<div class="komi-head"><span class="komi-nick">'+r.nick+'</span><span class="komi-date">'+r.date+'</span></div>'+
+            '<div style="display:flex;gap:1px;margin-bottom:5px;">'+'★'.repeat(r.rating||0).split('').map(function(){return'<span style="font-size:13px;color:var(--a);">★</span>';}).join('')+'</div>'+
+            '<div class="komi-text">'+r.text+'</div>'+
+            (r.photos&&r.photos.length?'<div class="komi-photos">'+r.photos.map(function(p){return'<img class="komi-thumb" src="'+p+'">';}).join('')+'</div>':'')+
+          '</div>';
+        }).join('')+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+render();
+renderKuchi();
+</script>
+</body>
+</html>
